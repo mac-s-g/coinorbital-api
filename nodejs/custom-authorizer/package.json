@@ -1,0 +1,9 @@
+{
+  "name": "coinorbital-custom-authorizer",
+  "version": "0.0.2",
+  "description": "An AWS Lambda function to provide a Custom Authenticator for AWS API Gateway that verifies RS* signed tokens",
+  "dependencies": {
+    "jsonwebtoken": "^8.2.1",
+    "jwks-rsa": "^1.2.1"
+  }
+}

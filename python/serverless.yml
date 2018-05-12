@@ -1,0 +1,85 @@
+service: coinorbital-python-api
+
+frameworkVersion: ">=1.1.0 <2.0.0"
+
+provider:
+  name: aws
+  runtime: python3.6
+  stage: staging
+  region: us-east-1
+  environment:
+    FEEDBACK_TABLE: ${self:service}-${opt:stage, self:provider.stage}-feedback
+    USER_TABLE: ${self:service}-${opt:stage, self:provider.stage}-user
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.FEEDBACK_TABLE}"
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.USER_TABLE}"
+
+functions:
+  getFeedback:
+    handler: feedback/fetch.fetch
+    events:
+      - http:
+          path: feedback
+          method: GET
+          cors: true
+          authorizer:
+            arn: arn:aws:lambda:us-east-1:424458462088:function:coinorbital-nodejs-authorizer-${self:provider.stage}-authorize
+            identitySource: method.request.header.Authorization
+
+resources:
+  Resources:
+    FeedbackDynamoDbTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: user_id
+            AttributeType: S
+          -
+            AttributeName: timestamp
+            AttributeType: N
+
+        KeySchema:
+          -
+            AttributeName: user_id
+            KeyType: HASH
+          -
+            AttributeName: timestamp
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+        TableName: ${self:provider.environment.FEEDBACK_TABLE}
+    UserDynamoDbTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: user_id
+            AttributeType: S
+        KeySchema:
+          -
+            AttributeName: user_id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+        TableName: ${self:provider.environment.USER_TABLE}

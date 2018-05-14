@@ -1,0 +1,89 @@
+service: coinorbital-python-api
+
+frameworkVersion: ">=1.1.0 <2.0.0"
+
+provider:
+  name: aws
+  runtime: python3.6
+  stage: staging
+  region: us-east-1
+  environment:
+    USER_TABLE: ${self:service}-${opt:stage, self:provider.stage}-user
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.USER_TABLE}"
+
+functions:
+
+  getTransactions:
+    handler: user/transactions/get.get
+    events:
+      - http:
+          path: user/transactions
+          method: GET
+          cors: true
+          authorizer:
+            arn: arn:aws:lambda:us-east-1:424458462088:function:coinorbital-nodejs-authorizer-${self:provider.stage}-authorize
+            identitySource: method.request.header.Authorization
+
+  upsertTransactions:
+    handler: user/transactions/upsert.upsert
+    events:
+      - http:
+          path: user/transactions
+          method: POST
+          cors: true
+          authorizer:
+            arn: arn:aws:lambda:us-east-1:424458462088:function:coinorbital-nodejs-authorizer-${self:provider.stage}-authorize
+            identitySource: method.request.header.Authorization
+
+  getWatchList:
+    handler: user/watchlist/get.get
+    events:
+      - http:
+          path: user/watchlist
+          method: GET
+          cors: true
+          authorizer:
+            arn: arn:aws:lambda:us-east-1:424458462088:function:coinorbital-nodejs-authorizer-${self:provider.stage}-authorize
+            identitySource: method.request.header.Authorization
+
+  upsertWatchList:
+    handler: user/watchlist/upsert.upsert
+    events:
+      - http:
+          path: user/watchlist
+          method: POST
+          cors: true
+          authorizer:
+            arn: arn:aws:lambda:us-east-1:424458462088:function:coinorbital-nodejs-authorizer-${self:provider.stage}-authorize
+            identitySource: method.request.header.Authorization
+
+resources:
+  Resources:
+
+    UserDynamoDbTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: user_id
+            AttributeType: S
+
+        KeySchema:
+          -
+            AttributeName: user_id
+            KeyType: HASH
+
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+        TableName: ${self:provider.environment.USER_TABLE}

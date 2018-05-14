@@ -1,0 +1,19 @@
+
+service: coinorbital-nodejs-authorizer
+
+frameworkVersion: ">=1.1.0 <2.0.0"
+
+provider:
+  name: aws
+  runtime: nodejs6.10
+  stage: staging
+  region: us-east-1
+  environment:
+    JWKS_URI: https://coinorbital.auth0.com/.well-known/jwks.json
+    AUDIENCE: https://coinorbital.com/api/authorize
+    TOKEN_ISSUER: https://coinorbital.auth0.com/
+
+functions:
+  authorize:
+    handler: authorizer.authorize
+    integration: lambda

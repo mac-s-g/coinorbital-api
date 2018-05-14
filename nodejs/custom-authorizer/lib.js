@@ -42,7 +42,6 @@ var getToken = function(params) {
 }
 
 module.exports.authenticate = function(params, cb) {
-    console.log(params)
     var token = getToken(params)
 
     var client = jwksClient({
@@ -75,7 +74,7 @@ module.exports.authenticate = function(params, cb) {
                             principalId: decoded.sub,
                             policyDocument: getPolicyDocument(
                                 "Allow",
-                                params.methodArn
+                                "*" // params.methodArn
                             ),
                             context: {
                                 scope: decoded.scope

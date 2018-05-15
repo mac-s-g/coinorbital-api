@@ -2,31 +2,28 @@ import os
 import json
 import boto3
 import sys
-sys.path.insert(0, './')
+sys.path.insert(0, './../')
 from user import user
 from user import decimalencoder
 
 dynamodb = boto3.resource('dynamodb')
 table = dynamodb.Table(os.environ['USER_TABLE'])
 
-def get(event, context):
+def getAll(event, context):
 
     result = table.get_item(
         Key={
             'user_id': user.getId(event)
         }
     )
+    user_record = result['Item']
 
-    try:
-        user_record = result['Item']
-    except:
-        user_record = {
-            'user_id': user.getId(event)
-        }
+    investments = user.getInvestments(user_record)
 
-    response = {
+    return {
         "statusCode": 200,
-        "body": json.dumps(user_record, cls=decimalencoder.DecimalEncoder)
+        "body": json.dumps(
+            {name:inv for (name, inv) in investments.items()},
+            cls=decimalencoder.DecimalEncoder
+        )
     }
-
-    return response

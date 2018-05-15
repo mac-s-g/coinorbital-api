@@ -33,11 +33,55 @@ functions:
             arn: arn:aws:lambda:us-east-1:424458462088:function:coinorbital-nodejs-authorizer-${self:provider.stage}-authorize
             identitySource: method.request.header.Authorization
 
-  getTransactions:
-    handler: user/transactions/get.get
+  upsertUser:
+    handler: user/upsert.upsert
     events:
       - http:
-          path: user/transactions
+          path: user
+          method: POST
+          cors: true
+          authorizer:
+            arn: arn:aws:lambda:us-east-1:424458462088:function:coinorbital-nodejs-authorizer-${self:provider.stage}-authorize
+            identitySource: method.request.header.Authorization
+
+  getInvestments:
+    handler: user/investments/getAll.getAll
+    events:
+      - http:
+          path: user/investments
+          method: GET
+          cors: true
+          authorizer:
+            arn: arn:aws:lambda:us-east-1:424458462088:function:coinorbital-nodejs-authorizer-${self:provider.stage}-authorize
+            identitySource: method.request.header.Authorization
+
+  getInvestment:
+    handler: user/investments/get.get
+    events:
+      - http:
+          path: user/investments/{investment}
+          method: GET
+          cors: true
+          authorizer:
+            arn: arn:aws:lambda:us-east-1:424458462088:function:coinorbital-nodejs-authorizer-${self:provider.stage}-authorize
+            identitySource: method.request.header.Authorization
+
+  upsertInvestment:
+    handler: user/investments/upsert.upsert
+    events:
+      - http:
+          path: user/investments/{investment}
+          method: POST
+          cors: true
+          authorizer:
+            arn: arn:aws:lambda:us-east-1:424458462088:function:coinorbital-nodejs-authorizer-${self:provider.stage}-authorize
+            identitySource: method.request.header.Authorization
+
+  getTransactions:
+    handler: user/investments/transactions/get.get
+    events:
+      - http:
+          path: user/investments/{investment}/transactions
           method: GET
           cors: true
           authorizer:
@@ -45,10 +89,10 @@ functions:
             identitySource: method.request.header.Authorization
 
   upsertTransactions:
-    handler: user/transactions/upsert.upsert
+    handler: user/investments/transactions/upsert.upsert
     events:
       - http:
-          path: user/transactions
+          path: user/investments/{investment}/transactions
           method: POST
           cors: true
           authorizer:

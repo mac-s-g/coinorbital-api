@@ -12,10 +12,16 @@ table = dynamodb.Table(os.environ['USER_TABLE'])
 def upsert(event, context):
     post = json.loads(event['body'])
 
-    if "investment" in post and "name" in post["investment"]:
-        investment = post["investment"]
+    if "investment" in event['pathParameters']:
+        name = event['pathParameters']['investment']
     else:
-        raise Exception("investment.name required in post body")
+        raise Exception("investment name not valid")
+
+    if "investment" in post:
+        investment = post["investment"]
+        investment['name'] = name
+    else:
+        raise Exception("investment object required in post")
 
     result = table.get_item(
         Key={
@@ -25,7 +31,14 @@ def upsert(event, context):
     user_record = result['Item']
 
     investments = user.getInvestments(user_record)
-    investments[investment['name']] = investment
+
+    if name in investments:
+        #if investment already exists, update
+        for (key, val) in investment.items():
+            investments[name][key] = val
+    else:
+        #create new investment
+        investments[name] = investment
 
     table.update_item(
         Key={

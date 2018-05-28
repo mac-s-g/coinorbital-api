@@ -20,6 +20,14 @@ provider:
         - dynamodb:DeleteItem
       Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.USER_TABLE}"
 
+plugins:
+  - serverless-python-requirements
+
+custom:
+  pythonRequirements:
+    dockerizePip: true
+  stage: "${opt:stage, self:provider.stage}"
+
 functions:
 
   getUser:
@@ -27,7 +35,7 @@ functions:
     events:
       - http:
           path: user
-          method: GET
+          method: get
           cors: true
           authorizer:
             arn: arn:aws:lambda:us-east-1:424458462088:function:coinorbital-nodejs-authorizer-${self:provider.stage}-authorize
@@ -38,7 +46,7 @@ functions:
     events:
       - http:
           path: user
-          method: POST
+          method: post
           cors: true
           authorizer:
             arn: arn:aws:lambda:us-east-1:424458462088:function:coinorbital-nodejs-authorizer-${self:provider.stage}-authorize
@@ -49,7 +57,7 @@ functions:
     events:
       - http:
           path: user/investments
-          method: GET
+          method: get
           cors: true
           authorizer:
             arn: arn:aws:lambda:us-east-1:424458462088:function:coinorbital-nodejs-authorizer-${self:provider.stage}-authorize
@@ -60,7 +68,7 @@ functions:
     events:
       - http:
           path: user/investments/{investment}
-          method: GET
+          method: get
           cors: true
           authorizer:
             arn: arn:aws:lambda:us-east-1:424458462088:function:coinorbital-nodejs-authorizer-${self:provider.stage}-authorize
@@ -71,7 +79,7 @@ functions:
     events:
       - http:
           path: user/investments/{investment}
-          method: POST
+          method: post
           cors: true
           authorizer:
             arn: arn:aws:lambda:us-east-1:424458462088:function:coinorbital-nodejs-authorizer-${self:provider.stage}-authorize
@@ -82,7 +90,7 @@ functions:
     events:
       - http:
           path: user/investments/{investment}/transactions
-          method: GET
+          method: get
           cors: true
           authorizer:
             arn: arn:aws:lambda:us-east-1:424458462088:function:coinorbital-nodejs-authorizer-${self:provider.stage}-authorize
@@ -93,7 +101,7 @@ functions:
     events:
       - http:
           path: user/investments/{investment}/transactions
-          method: POST
+          method: post
           cors: true
           authorizer:
             arn: arn:aws:lambda:us-east-1:424458462088:function:coinorbital-nodejs-authorizer-${self:provider.stage}-authorize
@@ -104,7 +112,7 @@ functions:
     events:
       - http:
           path: user/watchlist
-          method: GET
+          method: get
           cors: true
           authorizer:
             arn: arn:aws:lambda:us-east-1:424458462088:function:coinorbital-nodejs-authorizer-${self:provider.stage}-authorize
@@ -115,7 +123,7 @@ functions:
     events:
       - http:
           path: user/watchlist
-          method: POST
+          method: post
           cors: true
           authorizer:
             arn: arn:aws:lambda:us-east-1:424458462088:function:coinorbital-nodejs-authorizer-${self:provider.stage}-authorize
@@ -123,6 +131,172 @@ functions:
 
 resources:
   Resources:
+    ApiGatewayRestApi:
+      Type: AWS::ApiGateway::RestApi
+      Properties:
+        Name: ${self:service}-${self:custom.stage}
+    #### Gateway Response INIT
+    GatewayResponseDefault400:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: DEFAULT_4XX
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"custom-4XX-generic\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+    GatewayResponseDefault500:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: DEFAULT_5XX
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"custom-5XX-generic\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+    GatewayResponseAccessDeied:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: ACCESS_DENIED
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"custom-403-access-denied\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+    GatewayResponseApiConfigurationError:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: API_CONFIGURATION_ERROR
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"custom-500-api-configuration-error\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+    GatewayResponseAuthorizerConfigurationError:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: AUTHORIZER_CONFIGURATION_ERROR
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"custom-500-authorizer-configuration-error\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+    GatewayResponseAuthorizerFailure:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: AUTHORIZER_FAILURE
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"custom-500-authorizer-failure\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+    GatewayResponseBadRequestBody:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: BAD_REQUEST_BODY
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"custom-400-bad-request-body\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+    GatewayResponseBadRequestParameters:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: BAD_REQUEST_PARAMETERS
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"custom-400-bad-request-parameters\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+    GatewayResponseExpiredToken:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: EXPIRED_TOKEN
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"custom-403-expired-token\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+    GatewayResponseIntegrationFailure:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: INTEGRATION_FAILURE
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"custom-504-integration-failure\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+    GatewayResponseIntegrationTimeout:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: INTEGRATION_TIMEOUT
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"custom-504-integration-timeout\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+    GatewayResponseInvalidApiKey:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: INVALID_API_KEY
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"custom-403-invalid-api-key\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+    GatewayResponseInvalidSignature:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: INVALID_SIGNATURE
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"custom-403-invalid-signature\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+    GatewayResponseMissingAuthenticationToken:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: MISSING_AUTHENTICATION_TOKEN
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"custom-403-missing-authentication-token\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+    GatewayResponseQuotaExceeded:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: QUOTA_EXCEEDED
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"custom-429-quota-exceeded\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+    GatewayResponseRequestTooLarge:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: REQUEST_TOO_LARGE
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"custom-413-request-too-large\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+    GatewayResponseResourceNotFound:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: RESOURCE_NOT_FOUND
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"custom-404-resource-not-found\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+    GatewayResponseThrottled:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: THROTTLED
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"custom-429-throttled\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+    GatewayResponseUnauthorized:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: UNAUTHORIZED
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"custom-401-unauthorized\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+    GatewayResponseUnauthorizedMediType:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: UNSUPPORTED_MEDIA_TYPE
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"custom-415-unsupported-media-type\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+
 
     UserDynamoDbTable:
       Type: 'AWS::DynamoDB::Table'

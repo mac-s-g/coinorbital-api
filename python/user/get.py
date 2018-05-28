@@ -1,32 +1,18 @@
-import os
 import json
-import boto3
 import sys
 sys.path.insert(0, './')
-from user import user
-from user import decimalencoder
+from User import User
+from decimalencoder import decimalencoder
+from lambda_decorators import cors_headers
 
-dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table(os.environ['USER_TABLE'])
-
+@cors_headers
 def get(event, context):
-
-    result = table.get_item(
-        Key={
-            'user_id': user.getId(event)
-        }
+  return {
+    "statusCode": 200,
+    "body": json.dumps(
+      User(event).get(),
+      cls=decimalencoder.DecimalEncoder
     )
+  }
 
-    try:
-        user_record = result['Item']
-    except:
-        user_record = {
-            'user_id': user.getId(event)
-        }
-
-    response = {
-        "statusCode": 200,
-        "body": json.dumps(user_record, cls=decimalencoder.DecimalEncoder)
-    }
-
-    return response
+  return response

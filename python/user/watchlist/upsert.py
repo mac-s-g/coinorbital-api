@@ -5,11 +5,13 @@ import os
 import boto3
 import sys
 sys.path.insert(0, './../')
-from user import user
+from user.User import User
+from lambda_decorators import cors_headers
 
 dynamodb = boto3.resource('dynamodb')
 table = dynamodb.Table(os.environ['USER_TABLE'])
 
+@cors_headers
 def upsert(event, context):
     post = json.loads(event['body'])
 
@@ -21,7 +23,7 @@ def upsert(event, context):
 
     table.update_item(
         Key={
-            'user_id': user.getId(event)
+            'user_id': User(event).get()['user_id']
         },
         ExpressionAttributeValues={
           ':last_modified': int(time.time()),
@@ -31,4 +33,7 @@ def upsert(event, context):
                          'watchlist = :watchlist'
     )
 
-    return {"statusCode": 200, "body": json.dumps({"success": True})}
+    return {
+        "statusCode": 200,
+        "body": json.dumps({"success": True})
+    }

@@ -1,34 +1,15 @@
-import os
 import json
-import boto3
 import sys
 sys.path.insert(0, './../')
-from user import user
-from user import decimalencoder
+from user.User import User
+from user.decimalencoder import DecimalEncoder
+from lambda_decorators import cors_headers
 
-
-dynamodb = boto3.resource('dynamodb')
-
+@cors_headers
 def get(event, context):
-    table = dynamodb.Table(os.environ['USER_TABLE'])
-    user_id = user.getId(event)
-
-    result = table.get_item(
-        Key={
-            'user_id': user_id
-        }
-    )
-
-    user_record = result['Item']
-
-    if "watchlist" in user_record:
-        watchlist = user_record['watchlist']
-    else:
-        watchlist = user.getWatchListTemplate()
-
-    response = {
+    return {
         "statusCode": 200,
-        "body": json.dumps(watchlist, cls=decimalencoder.DecimalEncoder)
+        "body": json.dumps(
+            User(event).get()['watchlist'],
+            cls=DecimalEncoder)
     }
-
-    return response

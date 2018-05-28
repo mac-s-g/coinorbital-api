@@ -1,30 +1,22 @@
-import os
 import json
-import boto3
 import sys
 sys.path.insert(0, './../')
-from user import user
-from user import decimalencoder
+from user.User import User
+from user.decimalencoder import DecimalEncoder
+from lambda_decorators import cors_headers
 
-dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table(os.environ['USER_TABLE'])
-
+@cors_headers
 def get(event, context):
 
-    result = table.get_item(
-        Key={
-            'user_id': user.getId(event)
-        }
-    )
-    user_record = result['Item']
+    user = User(event).get()
     investment = event['pathParameters']['investment']
 
-    if "investments" in user_record and investment in user_record['investments']:
+    if "investments" in user and investment in user['investments']:
         response = {
             "statusCode": 200,
             "body": json.dumps(
-                user_record['investments'][investment],
-                cls=decimalencoder.DecimalEncoder
+                user['investments'][investment],
+                cls=DecimalEncoder
             )
         }
     else:

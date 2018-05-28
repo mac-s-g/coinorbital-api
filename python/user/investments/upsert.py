@@ -4,7 +4,7 @@ import os
 import boto3
 import sys
 sys.path.insert(0, './../')
-from User import User
+from user.User import User
 from lambda_decorators import cors_headers
 
 dynamodb = boto3.resource('dynamodb')
@@ -26,7 +26,7 @@ def upsert(event, context):
         raise Exception("investment object required in post")
 
     user = User(event).get()
-    investments = user.investments
+    investments = user['investments']
 
     if name in investments:
         #if investment already exists, update
@@ -38,7 +38,7 @@ def upsert(event, context):
 
     table.update_item(
         Key={
-            'user_id': user.user_id
+            'user_id': user['user_id']
         },
         ExpressionAttributeValues={
           ':last_modified': int(time.time()),

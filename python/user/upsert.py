@@ -3,8 +3,7 @@ import json
 import boto3
 import sys
 sys.path.insert(0, './../')
-from User import User
-from decimalencoder import decimalencoder
+from user.User import User
 from lambda_decorators import cors_headers
 
 dynamodb = boto3.resource('dynamodb')

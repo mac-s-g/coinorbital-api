@@ -1,5 +1,6 @@
 import os
 import boto3
+from decimal import *
 
 dynamodb = boto3.resource('dynamodb')
 table = dynamodb.Table(os.environ['USER_TABLE'])
@@ -43,8 +44,8 @@ class User:
     )
 
     if "Item" in record:
-      for key in record:
-        self.__record[key] = record[key]
+      for key in record["Item"]:
+        self.__record[key] = record["Item"][key]
       self.__initializeFromRecord(record["Item"])
     else:
       self.__initializeNewUser()
@@ -52,9 +53,9 @@ class User:
 
   def get(self):
     user = self.__record
-    user.user_id = self.user_id
-    user.investments = self.investments
-    user.watchlist = self.watchlist
+    user['user_id'] = self.user_id
+    user['investments'] = self.investments
+    user['watchlist'] = self.watchlist
     return user
 
   def __initializeFromRecord(self, record):
@@ -100,6 +101,8 @@ class User:
       for key in required_keys:
         if key not in tx:
           raise
+      # tx["cost_per_coin_usd"] = Decimal(tx["cost_per_coin_usd"])
+      # tx["quantity"] = Decimal(tx["quantity"])
     except:
       valid = False
 

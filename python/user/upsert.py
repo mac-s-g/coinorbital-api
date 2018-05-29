@@ -1,13 +1,9 @@
-import os
 import json
-import boto3
 import sys
 sys.path.insert(0, './../')
 from user.User import User
+from user.decimalencoder import DecimalEncoder
 from lambda_decorators import cors_headers
-
-dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table(os.environ['USER_TABLE'])
 
 @cors_headers
 def upsert(event, context):
@@ -15,14 +11,20 @@ def upsert(event, context):
     if "user" not in post:
         raise Exception('user object required in post')
 
-    user = User(event).get()
+    user = User(event)
 
     for (key, val) in post['user'].items():
-        user[key] = val
+        user.setItem(key, val)
 
-    table.put_item(Item=user)
+    user.save()
 
     return {
         "statusCode": 200,
-        "body": json.dumps({"success": True})
+        "body": json.dumps(
+            {
+                "success": True,
+                "user": user.get()
+            },
+            cls=DecimalEncoder
+        )
     }

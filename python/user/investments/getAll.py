@@ -7,11 +7,10 @@ from lambda_decorators import cors_headers
 
 @cors_headers
 def getAll(event, context):
-
     return {
         "statusCode": 200,
         "body": json.dumps(
-            User(event).get()['investments'],
+            User(event).investments,
             cls=DecimalEncoder
         )
     }

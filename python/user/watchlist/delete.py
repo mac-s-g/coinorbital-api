@@ -1,23 +1,21 @@
 import json
 import sys
+from urllib.parse import unquote
 sys.path.insert(0, './../')
 from user.User import User
 from user.decimalencoder import DecimalEncoder
 from lambda_decorators import cors_headers
 
 @cors_headers
-def post(event, context):
-    post = json.loads(event['body'])
+def delete(event, context):
 
-    #could use some extra input validation
-    if "symbols" in post:
-        symbols = post["symbols"]
+    if "symbol" in event['pathParameters']:
+        symbol = unquote(event['pathParameters']['symbol'])
     else:
-        raise Exception("malformatted request")
+        raise Exception("symbol name not valid")
 
     user = User(event)
-    for symbol in symbols:
-        user.appendToWatchlist(symbol)
+    user.deleteFromWatchlist(symbol)
     user.save()
 
     return {

@@ -80,6 +80,15 @@ class User:
       return None
 
 
+  def save(self):
+    user = self.get()
+    user['last_modified'] = int(time.time())
+    if not self.__debug:
+      self.__table.put_item(Item=user)
+    else:
+      print("save:\n{}".format(json.dumps(user, cls=DecimalEncoder)))
+
+
   def __initializeNewUser(self):
     self.setItem("investments", self.__default_investments)
     self.setItem("watchlist", self.__default_watchlist)
@@ -113,15 +122,6 @@ class User:
       self.__record[key] = value
 
 
-  def save(self):
-    user = self.get()
-    user['last_modified'] = int(time.time())
-    if not self.__debug:
-      self.__table.put_item(Item=user)
-    else:
-      print("save:\n{}".format(json.dumps(user, cls=DecimalEncoder)))
-
-
   def setInvestment(self, investment):
     try:
       if self.validInvestment(investment):
@@ -136,6 +136,10 @@ class User:
         raise
     except:
       raise Exception('set investment failed: {}'.format(json.dumps(investment)))
+
+
+  def deleteInvestment(self, name):
+    self.investments.pop(name, None)
 
 
   def setTransactions(self, investment_name, transactions):
@@ -179,10 +183,13 @@ class User:
     except:
       raise Exception('append to watchlist failed: {}'.format(json.dumps(symbol)))
 
-
-
-  def deleteInvestment(self, name):
-    self.investments.pop(name, None)
+  def deleteFromWatchlist(self, symbol):
+    try:
+      if symbol in self.watchlist:
+        watchlist = [item for item in self.watchlist if item != symbol]
+        self.setWatchlist(watchlist)
+    except:
+      raise Exception('delete from watchlist failed: {}'.format(json.dumps(symbol)))
 
 
   def validInvestment(self, investment):

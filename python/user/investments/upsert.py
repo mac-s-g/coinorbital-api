@@ -32,6 +32,7 @@ def upsert(event, context):
                     investment["name"]
                 )
             )
+
     user.setInvestment(investment)
     user.save()
 

@@ -6,7 +6,7 @@ from user.decimalencoder import DecimalEncoder
 from lambda_decorators import cors_headers
 
 @cors_headers
-def upsert(event, context):
+def put(event, context):
     post = json.loads(event['body'])
 
     #could use some extra input validation

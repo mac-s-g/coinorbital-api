@@ -9,13 +9,13 @@ from lambda_decorators import cors_headers
 @cors_headers
 def delete(event, context):
 
-    if "investment" in event['pathParameters']:
-        name = unquote(event['pathParameters']['investment'])
+    if "symbol" in event['pathParameters']:
+        symbol = unquote(event['pathParameters']['symbol'])
     else:
-        raise Exception("investment name not valid")
+        raise Exception("symbol name not valid")
 
     user = User(event)
-    user.deleteInvestment(name)
+    user.deleteFromWatchlist(symbol)
     user.save()
 
     return {
@@ -23,7 +23,7 @@ def delete(event, context):
         "body": json.dumps(
             {
                 "success": True,
-                "investments": user.investments
+                "watchlist": user.watchlist
             },
             cls=DecimalEncoder
         )

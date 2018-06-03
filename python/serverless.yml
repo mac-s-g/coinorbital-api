@@ -140,12 +140,34 @@ functions:
             arn: arn:aws:lambda:us-east-1:424458462088:function:coinorbital-nodejs-authorizer-${self:provider.stage}-authorize
             identitySource: method.request.header.Authorization
 
-  upsertWatchList:
-    handler: user/watchlist/upsert.upsert
+  putWatchList:
+    handler: user/watchlist/put.put
+    events:
+      - http:
+          path: user/watchlist
+          method: put
+          cors: true
+          authorizer:
+            arn: arn:aws:lambda:us-east-1:424458462088:function:coinorbital-nodejs-authorizer-${self:provider.stage}-authorize
+            identitySource: method.request.header.Authorization
+
+  postWatchList:
+    handler: user/watchlist/post.post
     events:
       - http:
           path: user/watchlist
           method: post
+          cors: true
+          authorizer:
+            arn: arn:aws:lambda:us-east-1:424458462088:function:coinorbital-nodejs-authorizer-${self:provider.stage}-authorize
+            identitySource: method.request.header.Authorization
+
+  deleteWatchListItem:
+    handler: user/watchlist/delete.delete
+    events:
+      - http:
+          path: user/watchlist/{symbol}
+          method: delete
           cors: true
           authorizer:
             arn: arn:aws:lambda:us-east-1:424458462088:function:coinorbital-nodejs-authorizer-${self:provider.stage}-authorize

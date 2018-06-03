@@ -1,21 +1,23 @@
 import json
 import sys
-from urllib.parse import unquote
 sys.path.insert(0, './../')
 from user.User import User
 from user.decimalencoder import DecimalEncoder
 from lambda_decorators import cors_headers
 
 @cors_headers
-def delete(event, context):
+def post(event, context):
+    post = json.loads(event['body'])
 
-    if "investment" in event['pathParameters']:
-        name = unquote(event['pathParameters']['investment'])
+    #could use some extra input validation
+    if "symbols" in post:
+        symbols = post["symbols"]
     else:
-        raise Exception("investment name not valid")
+        raise Exception("malformatted request")
 
     user = User(event)
-    user.deleteInvestment(name)
+    for symbol in symbols:
+        user.appendToWatchlist(symbol)
     user.save()
 
     return {
@@ -23,7 +25,7 @@ def delete(event, context):
         "body": json.dumps(
             {
                 "success": True,
-                "investments": user.investments
+                "watchlist": user.watchlist
             },
             cls=DecimalEncoder
         )
